@@ -1994,13 +1994,20 @@ Function CreateOrJoinFarm ([xml]$xmlInput, [System.Security.SecureString]$secPhr
         }
 
         Write-Host -ForegroundColor White " - Attempting to join farm on `"$configDB`"..."
-        Connect-SPConfigurationDatabase -DatabaseName "$configDB" -Passphrase $secPhrase -DatabaseServer "$dbServer" @distCacheSwitch @serverRoleSwitch @databaseCredentialsParameter -ErrorAction SilentlyContinue
+        
+        if($spYear -eq "SE") {
+            $databaseConnectionEncrption = @{DatabaseConnectionEncrption = "Mandatory"}
+        }
+        else{
+            $databaseConnectionEncrption = @{}
+        }
+        Connect-SPConfigurationDatabase -DatabaseName "$configDB" -Passphrase $secPhrase -DatabaseServer "$dbServer" @databaseConnectionEncrption @distCacheSwitch @serverRoleSwitch @databaseCredentialsParameter -ErrorAction SilentlyContinue
         If (-not $?)
         {
             Write-Host -ForegroundColor White " - No existing farm found.`n - Creating config database `"$configDB`"..."
             # Waiting a few seconds seems to help with the Connect-SPConfigurationDatabase barging in on the New-SPConfigurationDatabase command; not sure why...
             Start-Sleep 5
-            New-SPConfigurationDatabase -DatabaseName "$configDB" -DatabaseServer "$dbServer" -AdministrationContentDatabaseName "$centralAdminContentDB" -Passphrase $secPhrase -FarmCredentials $farmCredential @distCacheSwitch @serverRoleSwitch @serverRoleOptionalSwitch @databaseCredentialsParameter
+            New-SPConfigurationDatabase -DatabaseName "$configDB" -DatabaseServer "$dbServer" -AdministrationContentDatabaseName "$centralAdminContentDB" -Passphrase $secPhrase -FarmCredentials $farmCredential @databaseConnectionEncrption @distCacheSwitch @serverRoleSwitch @serverRoleOptionalSwitch @databaseCredentialsParameter
             If (-not $?)
             {
                 Throw " - Error creating new farm configuration database"
